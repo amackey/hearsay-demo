@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#0b0c0f">
+<meta name="color-scheme" content="dark">
+<title>Hearsay — an early look</title>
+<style>
+  :root{
+    --bg:#0b0c0f; --panel:#14161b; --panel2:#1b1e25; --line:#262a33;
+    --ink:#f2f4f8; --ink2:#a8b0bf; --ink3:#6d7484;
+    --accent:#ff5c39; --accent2:#ffb03a;
+    --ok:#3ddc97; --warn:#ffb03a; --bad:#ff5f6d; --info:#5aa9ff;
+    --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.45;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+
+  /* ============ LAYOUT ============
+     mobile  : one column, reordered  intro → switcher → app → questions
+     desktop : two independent columns — left = switcher + phone, right = intro + questions
+     The columns must NOT share grid rows, or the tall intro dictates the height of
+     the switcher's row and leaves a large gap beneath it. Hence the wrappers. */
+  .shell{display:flex;flex-direction:column;max-width:600px;margin:0 auto;padding:0 0 40px}
+  .col-l,.col-r{display:contents}          /* flatten on mobile so order: works */
+  .a-intro{order:1} .a-sw{order:2} .a-app{order:3} .a-ask{order:4}
+
+  @media(min-width:900px){
+    .shell{display:grid;max-width:1120px;grid-template-columns:432px minmax(0,1fr);
+           column-gap:48px;align-items:start;padding:34px 28px 70px}
+    .col-l,.col-r{display:block}           /* real columns, independent heights */
+  }
+
+  /* ============ INTRO ============ */
+  .a-intro{padding:26px 20px 2px}
+  @media(min-width:900px){.a-intro{padding:0 0 4px}}
+  .logo{font-size:32px;font-weight:700;letter-spacing:-.025em;margin-bottom:1px}
+  .logo span{color:var(--accent)}
+  .sub{font-size:11px;color:var(--ink3);letter-spacing:.18em;text-transform:uppercase;margin-bottom:18px}
+  .a-intro p{font-size:15.5px;color:var(--ink2);margin:0 0 13px}
+  .a-intro p b{color:var(--ink)}
+  .callout{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:10px;padding:12px 14px;font-size:13.5px;color:var(--ink2);margin:18px 0 0}
+  .deskonly{display:none}
+  @media(min-width:900px){.deskonly{display:block}}
+
+  /* ============ SWITCHER ============ */
+  .a-sw{padding:18px 16px 8px;position:sticky;top:0;z-index:30;
+        background:linear-gradient(var(--bg) 78%,transparent)}
+  @media(min-width:900px){.a-sw{padding:0 0 14px;position:static;background:none}}
+  .switch{display:flex;gap:7px}
+  .switch button{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink2);
+    font:inherit;font-size:12px;padding:10px 5px;border-radius:11px;cursor:pointer;line-height:1.25;
+    -webkit-tap-highlight-color:transparent}
+  .switch button b{display:block;font-size:13.5px;color:var(--ink);font-weight:650;margin-bottom:1px}
+  .switch button.on{background:var(--accent);border-color:var(--accent)}
+  .switch button.on,.switch button.on b{color:#fff}
+  .ctx{font-size:12.5px;color:var(--ink3);padding:9px 2px 0;min-height:36px}
+  .ctx-m{padding:0 18px 4px}
+  @media(min-width:900px){.ctx-m{display:none}}
+  .ctx-d{display:none}
+  @media(min-width:900px){.ctx-d{display:block;margin-top:16px}}
+
+  /* ============ PHONE / APP ============ */
+  .a-app{display:flex;justify-content:center}
+  .phone{width:100%}
+  .screen{background:var(--bg);overflow:visible;position:relative}
+  .notch{display:none}
+  .pad{padding:6px 16px 34px}
+  @media(min-width:900px){
+    .phone{width:432px;background:#000;border-radius:44px;padding:11px;
+           border:1px solid #2a2e38;box-shadow:0 26px 64px rgba(0,0,0,.65);
+           position:sticky;top:24px}
+    .screen{border-radius:33px;height:748px;overflow-y:auto;scrollbar-width:none}
+    .screen::-webkit-scrollbar{display:none}
+    .notch{display:flex;height:26px;align-items:center;justify-content:space-between;
+      padding:0 22px;font-size:11px;color:var(--ink3);position:sticky;top:0;
+      background:linear-gradient(var(--bg) 70%,transparent);z-index:20}
+    .pad{padding:4px 18px 40px}
+  }
+
+  .appbar{display:flex;align-items:baseline;justify-content:space-between;margin:6px 0 14px}
+  .brand{font-size:21px;font-weight:700;letter-spacing:-.02em}
+  .brand span{color:var(--accent)}
+  .brandsub{font-size:10.5px;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase}
+  .h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);
+      margin:24px 0 10px;font-weight:600}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:12px}
+  .card.bridge{border-color:#4a3a2a;background:linear-gradient(180deg,#1c1710,var(--panel))}
+  .row{display:flex;gap:12px;align-items:flex-start}
+  .art{width:54px;height:54px;border-radius:12px;flex:0 0 54px;display:flex;align-items:center;
+       justify-content:center;font-weight:700;font-size:17px;color:#0b0c0f}
+  .who{font-weight:650;font-size:17px;letter-spacing:-.01em}
+  .where{color:var(--ink2);font-size:13.5px;margin-top:2px}
+  .meta{color:var(--ink3);font-size:12.5px;margin-top:3px}
+  .why{font-size:14px;background:var(--panel2);border-radius:11px;padding:11px 13px;
+       margin-top:11px;border-left:2px solid var(--accent)}
+  .why em{color:var(--accent2);font-style:normal;font-weight:600}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .chip{font-size:11.5px;padding:4px 10px;border-radius:20px;border:1px solid var(--line);
+        color:var(--ink2);background:var(--panel2)}
+  .chip.ok{color:var(--ok);border-color:#1d4d3a}
+  .chip.warn{color:var(--warn);border-color:#54401a}
+  .chip.bad{color:var(--bad);border-color:#5a2329}
+  .chip.info{color:var(--info);border-color:#1e3a5c}
+  .chip.new{color:var(--accent);border-color:#5c2a1c}
+
+  .acts{display:flex;gap:8px;margin-top:13px}
+  .btn{flex:1;text-align:center;padding:13px;border-radius:11px;font-size:14.5px;font-weight:600;
+    cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+    -webkit-tap-highlight-color:transparent}
+  .btn.go{background:var(--accent);border-color:var(--accent);color:#fff}
+  .say{display:flex;gap:8px;margin-top:9px;align-items:center}
+  .say .t{padding:9px 15px;border-radius:10px;border:1px solid var(--line);
+    background:var(--panel2);cursor:pointer;font-size:16px;-webkit-tap-highlight-color:transparent}
+  .say .lab{font-size:11.5px;color:var(--ink3)}
+
+  .ban{border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:12px;
+       border:1px solid var(--line);background:var(--panel);color:var(--ink2)}
+  .ban b{color:var(--ink);font-weight:600}
+  .ban.learn{border-color:#3a2e18;background:#1a1710}
+  .ban.honest{border-color:#25313f;background:#111820}
+
+  .msg{max-width:88%;padding:11px 14px;border-radius:16px;font-size:14.5px;margin-bottom:9px}
+  .msg.a{background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:5px}
+  .msg.u{background:var(--accent);color:#fff;margin-left:auto;border-bottom-right-radius:5px}
+  .opts{display:flex;gap:7px;flex-wrap:wrap;margin:2px 0 12px}
+  .opt{border:1px solid var(--line);background:var(--panel2);border-radius:20px;padding:9px 15px;
+       font-size:13.5px;cursor:pointer;color:var(--ink);-webkit-tap-highlight-color:transparent}
+  .typing{color:var(--ink3);font-size:12.5px;font-style:italic}
+
+  .src{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .src .ico{width:34px;height:34px;border-radius:9px;background:var(--panel2);display:flex;
+    align-items:center;justify-content:center;font-size:16px;flex:0 0 34px}
+  .src .nm{flex:1;font-size:14.5px}
+  .src .st{font-size:12px;color:var(--ink3)}
+  .src .go2{font-size:12.5px;color:var(--accent);font-weight:600}
+
+  .learn{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px}
+  .bar{height:6px;background:var(--panel2);border-radius:4px;margin:6px 0 2px;position:relative;overflow:hidden}
+  .bar i{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px}
+  .barlab{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink3)}
+  .lrow{margin-bottom:15px}
+  .lrow .t{font-size:13.5px;font-weight:600;margin-bottom:2px}
+
+  /* ============ SHEET ============ */
+  .sheet{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-end;
+         justify-content:center;z-index:80}
+  .sheet.open{display:flex}
+  .sheetbox{background:var(--panel);width:100%;max-width:460px;border-radius:20px 20px 0 0;
+    padding:20px 18px calc(30px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+  @media(min-width:900px){.sheetbox{border-radius:18px;margin-bottom:8vh}}
+  .sheetbox h4{margin:0 0 5px;font-size:17px}
+  .sheetbox p{margin:0 0 15px;font-size:13px;color:var(--ink3)}
+  .reason{padding:14px;border:1px solid var(--line);border-radius:11px;margin-bottom:7px;
+          font-size:14.5px;cursor:pointer;background:var(--panel2)}
+
+  /* ============ QUESTIONS ============ */
+  .a-ask{padding:8px 20px 40px}
+  @media(min-width:900px){.a-ask{padding:26px 0 0}}
+  .a-ask h3{font-size:18px;margin:22px 0 8px}
+  .q{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+     padding:14px 16px;margin-bottom:9px;font-size:14.5px;color:var(--ink2)}
+  .q b{color:var(--ink);display:block;margin-bottom:2px;font-size:15px}
+  .send{display:block;width:100%;text-align:center;background:var(--accent);color:#fff;
+    text-decoration:none;border:0;padding:15px;border-radius:12px;font-weight:650;
+    font-size:15.5px;margin-top:16px;font-family:inherit;cursor:pointer}
+  .send:disabled{opacity:.55;cursor:default}
+  .foot{font-size:12px;color:var(--ink3);text-align:center;margin-top:18px;line-height:1.6}
+
+  /* form controls */
+  .pick{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .pick span{border:1px solid var(--line);background:var(--panel2);border-radius:20px;
+    padding:8px 13px;font-size:13px;cursor:pointer;color:var(--ink2);
+    -webkit-tap-highlight-color:transparent;user-select:none}
+  .pick span.sel{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .q textarea,.q input{width:100%;margin-top:9px;background:var(--panel2);color:var(--ink);
+    border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;
+    font-size:14.5px;resize:vertical;-webkit-appearance:none}
+  .q textarea:focus,.q input:focus{outline:0;border-color:var(--accent)}
+  .q textarea::placeholder,.q input::placeholder{color:#5a606e}
+  .formnote{font-size:12.5px;color:var(--ink3);text-align:center;margin:10px 0 0;min-height:18px}
+  .formnote.err{color:var(--bad)}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+ <div class="col-l">
+  <div class="a-sw">
+    <div class="switch" id="sw">
+      <button data-p="d1" class="on"><b>Day one</b>just installed</button>
+      <button data-p="w3"><b>A few weeks in</b>learning you</button>
+      <button data-p="y2"><b>A year later</b>knows you</button>
+    </div>
+    <div class="ctx ctx-m" id="ctxM"></div>
+  </div>
+
+  <div class="a-app">
+    <div class="phone"><div class="screen" id="screen">
+      <div class="notch"><span>9:41</span><span>Hearsay</span><span>􀛨 􀙇 􀛨</span></div>
+      <div class="pad" id="pad"></div>
+    </div></div>
+  </div>
+ </div>
+
+ <div class="col-r">
+  <div class="a-intro">
+    <div class="logo">hear<span>say</span></div>
+    <div class="sub">Hear · Say · Go</div>
+    <p><b>An idea I'm kicking around — I'd love your gut reaction.</b></p>
+    <p>Hearsay tells you about a handful of concerts near you that you'd actually want to go to
+       — including bands you've <i>never heard of</i> — and says in plain English why it picked each one.</p>
+    <p>It knows what music you like, which venues you enjoy, and whether you're already busy
+       that night. Then it sends <b>five shows a week. Not five hundred.</b></p>
+    <div class="callout">None of this is real yet — it's a clickable sketch. The venues are real
+       Philadelphia rooms; the bands are invented. <span id="verb">Tap</span> things, most of it responds.</div>
+    <div class="ctx ctx-d" id="ctxD"></div>
+    <p class="deskonly" style="font-size:13px;color:var(--ink3);margin-top:18px">
+       You're on a big screen, so it's shown inside a phone. Open this same file on your
+       phone and it fills the screen like a real app.</p>
+  </div>
+
+  <div class="a-ask">
+    <h3>What I'd love to know</h3>
+    <p style="font-size:13.5px;color:var(--ink3);margin:0 0 14px">
+      Takes a minute. Skip anything you don't care about.</p>
+
+    <form id="fb">
+      <div class="q">
+        <b>Would you actually open this?</b>
+        <div class="pick" data-k="open">
+          <span>Yes, weekly</span><span>Maybe monthly</span><span>Probably not</span>
+        </div>
+      </div>
+
+      <div class="q">
+        <b>Would you go see a band you'd never heard of?</b>
+        <div class="pick" data-k="unknown">
+          <span>Yes, that's the appeal</span><span>Depends</span><span>No — only bands I know</span>
+        </div>
+      </div>
+
+      <div class="q">
+        <b>Do the explanations land?</b>
+        <div class="pick" data-k="why">
+          <span>Builds trust</span><span>Neutral</span><span>Reads like marketing</span>
+        </div>
+      </div>
+
+      <div class="q">
+        <b>What worked, and what didn't?</b>
+        <textarea name="worked" rows="3" placeholder="Anything at all — first impressions are the useful bit."></textarea>
+      </div>
+
+      <div class="q">
+        <b>What's missing?</b>
+        <textarea name="missing" rows="3" placeholder="What you'd need before using this for real."></textarea>
+      </div>
+
+      <div class="q">
+        <b>Who is this? <span style="font-weight:400;color:var(--ink3)">(optional)</span></b>
+        <input name="who" type="text" placeholder="Name, so Aaron can follow up">
+      </div>
+
+      <button type="submit" class="send" id="submit">Send feedback →</button>
+      <p class="formnote" id="formnote"></p>
+    </form>
+
+    <div id="thanks" style="display:none">
+      <div class="q" style="border-color:#1d4d3a;background:#101a15">
+        <b style="color:var(--ok)">Thank you — that's genuinely useful.</b>
+        Aaron will see this. If you think of anything else, just reply to whoever sent you the link.
+      </div>
+    </div>
+
+    <p class="foot">Invented bands, real venues. Nothing is booked, nothing is charged,<br>no account needed.</p>
+  </div>
+ </div>
+
+</div>
+
+<div class="sheet" id="sheet"><div class="sheetbox">
+  <h4>What didn't work?</h4>
+  <p>Saying <i>why</i> is the whole trick — complaining about the venue never changes what it thinks of your taste in music.</p>
+  <div class="reason" onclick="cs(0)">Not my kind of music</div>
+  <div class="reason" onclick="cs(1)">Wrong venue for me</div>
+  <div class="reason" onclick="cs(2)">Too much of a nostalgia act</div>
+  <div class="reason" onclick="cs(3)">Too unfamiliar — I want bands I know</div>
+  <div class="reason" onclick="cs(4)">Bad night for me</div>
+  <div class="reason" onclick="cs(5)">Too expensive</div>
+</div></div>
+
+<script>
+var A=function(c){return 'background:linear-gradient(135deg,'+c+')'};
+function card(o){
+  return '<div class="card '+(o.bridge?'bridge':'')+'">'+
+    '<div class="row"><div class="art" style="'+A(o.c)+'">'+o.i+'</div>'+
+    '<div style="flex:1"><div class="who">'+o.who+'</div>'+
+    '<div class="where">'+o.where+'</div><div class="meta">'+o.meta+'</div></div></div>'+
+    (o.why?'<div class="why">'+o.why+'</div>':'')+
+    '<div class="chips">'+o.chips.map(function(c){return '<span class="chip '+(c[1]||'')+'">'+c[0]+'</span>'}).join('')+'</div>'+
+    '<div class="acts">'+
+      '<div class="btn" onclick="say(0)">▶ Listen</div>'+
+      '<div class="btn go" onclick="say(1)">Go →</div>'+
+    '</div>'+
+    '<div class="say"><div class="t" onclick="this.style.background=\'#1d4d3a\'">👍</div>'+
+    '<div class="t" onclick="os()">👎</div>'+
+    '<span class="lab">a thumbs down always asks why</span></div></div>';
+}
+
+var d1 =
+'<div class="appbar"><div class="brand">hear<span>say</span></div><div class="brandsub">Hear · Say · Go</div></div>'+
+'<div class="ban"><b>Philadelphia</b> · within 25 miles · next 3 months</div>'+
+'<div class="h2">First, just tell it what you like</div>'+
+'<div class="msg a">No accounts to link, nothing to wait for. Name a few artists you love and I’ll take it from there.</div>'+
+'<div class="msg u">I like Bruno Mars</div>'+
+'<div class="msg a">Good start. Bruno Mars sits across two pretty different worlds — which one pulls harder for you?</div>'+
+'<div class="opts"><div class="opt" onclick="this.style.borderColor=\'#ff5c39\'">The retro-funk side</div>'+
+'<div class="opt" onclick="this.style.borderColor=\'#ff5c39\'">The radio-pop side</div>'+
+'<div class="opt" onclick="this.style.borderColor=\'#ff5c39\'">Both, honestly</div></div>'+
+'<div class="msg a">Anything you’d rather I steered clear of?</div>'+
+'<div class="msg u">nothing too loud, no screaming vocals</div>'+
+'<div class="typing">Noted — that’ll quietly push those shows down the list from now on.</div>'+
+'<div class="h2">Add more later, if you feel like it</div>'+
+'<div class="src"><div class="ico">📦</div><div class="nm">Your listening history<div class="st">Deepest picture. Takes a few weeks to arrive.</div></div><div class="go2">Request</div></div>'+
+'<div class="src"><div class="ico">💿</div><div class="nm">Scan your CD shelf<div class="st">Point the camera along the spines</div></div><div class="go2">Scan</div></div>'+
+'<div class="src" style="border:0"><div class="ico">📅</div><div class="nm">Your calendar<div class="st">Never leaves your phone</div></div><div class="go2">Allow</div></div>'+
+'<div class="h2">Already, from 90 seconds of that</div>'+
+card({i:'TV',c:'#ffb03a,#ff5c39',who:'The Velour Underground',where:'Johnny Brenda’s · Fishtown',
+ meta:'Thu Aug 14 · evening · $18',
+ why:'Retro-soul with a horn section — the <em>Bruno Mars</em> thread you pulled on, in a 250-person room.',
+ chips:[['Brand new to you','new'],['Still learning your taste','warn']]});
+
+var w3 =
+'<div class="appbar"><div class="brand">hear<span>say</span></div><div class="brandsub">Week 3</div></div>'+
+'<div class="ban learn"><b>Still figuring you out.</b> Three shows this week rather than five, and I’m deliberately mixing it up while I learn.</div>'+
+'<div class="ban"><b>Your listening history is on its way</b> — requested Jul 3, usually about a month.</div>'+
+'<div class="h2">This week</div>'+
+card({i:'PR',c:'#5aa9ff,#3ddc97',who:'Pale Ridge',where:'Ardmore Music Hall',meta:'Fri Aug 8 · 8:00pm · $25',
+ why:'The closest thing to a sure bet I have for you so far.',
+ chips:[['You’re free','ok'],['New to you','new']]})+
+card({i:'KH',c:'#ff5f6d,#ffb03a',who:'Kestrel Hours',where:'PhilaMOCA',meta:'Sat Aug 16 · evening · $15',
+ why:'A stretch, honestly — quieter and stranger than anything you’ve liked yet. I’m testing an edge.',
+ chips:[['You’re free','ok'],['A guess','info']]})+
+card({i:'BW',c:'#a8b0bf,#5aa9ff',who:'Brass & Wire',where:'World Cafe Live',meta:'Wed Aug 20 · 7:30pm · $22',
+ why:'Horn-forward soul, close to where you started.',
+ chips:[['Clashes with “Dinner w/ M.”','warn'],['Go anyway?','info']]})+
+'<div class="h2">One quick thing</div>'+
+'<div class="card"><div style="font-size:14.5px;font-weight:600;margin-bottom:5px">How was Johnny Brenda’s?</div>'+
+'<div style="font-size:13px;color:#6d7484;margin-bottom:11px">You went on Jul 26. It keeps coming up, so knowing how you feel about the room would help a lot.</div>'+
+'<div class="chips"><span class="chip ok">Loved it</span><span class="chip">Fine</span><span class="chip bad">Not for me</span></div></div>'+
+'<div class="ban honest"><b>Worth saying:</b> my Philadelphia listings lean indie, folk and rock right now. If you’re into metal or hip-hop I’m thin there — I’d rather tell you than quietly show you less.</div>';
+
+var y2 =
+'<div class="appbar"><div class="brand">hear<span>say</span></div><div class="brandsub">Year 2</div></div>'+
+'<div class="ban"><b>Five shows.</b> 43 bands played the area this month. These are the ones worth your Tuesday.</div>'+
+'<div class="h2">This week</div>'+
+card({i:'FH',c:'#3ddc97,#5aa9ff',who:'Foxglove Hymnal',where:'Union Transfer',meta:'Thu Sep 11 · 8:00pm · $32',
+ why:'My most confident pick in months — lands right between <em>Wilco</em> and <em>Big Thief</em>, and you’ve rated both up again and again.',
+ chips:[['You’re free','ok'],['New to you','new'],['A venue you love','ok']]})+
+card({bridge:1,i:'IX',c:'#ffb03a,#ff5f6d',who:'Signal & Static',where:'Underground Arts',meta:'Sat Sep 20 · evening · $20',
+ why:'<em>From your CD shelf.</em> You’ve owned four <b>INXS</b> records since the 90s and never streamed them once. People who love INXS turn up a lot in this band’s audience — and they’re playing eleven blocks from you.',
+ chips:[['From your shelf','info'],['You’re free','ok'],['Never heard of them','new']]})+
+card({i:'MR',c:'#ff5c39,#ffb03a',who:'Marisol Reyes Trio',where:'Keswick Theatre',meta:'Fri Sep 26 · 8:00pm · $45',
+ why:'You’ve rated this room up three times, and this is the closest thing to your jazz corner all season.',
+ chips:[['All-day event that day','warn'],['Probably fine — go anyway?','info']]})+
+card({i:'HW',c:'#5aa9ff,#a8b0bf',who:'Hollow Ward',where:'Johnny Brenda’s',meta:'Tue Sep 30 · 8:30pm · $16',
+ why:'Small room, third on the bill, almost nobody has heard of them. Exactly the kind of thing you keep saying yes to.',
+ chips:[['You’re free','ok'],['Opening act','new']]})+
+card({i:'TC',c:'#ff5f6d,#5aa9ff',who:'The Cormorants',where:'Mann Center',meta:'Sun Oct 5 · 7:00pm · $68',
+ why:'Bigger and pricier than you usually go for. Including it because you said yes to exactly one of these last year and loved it.',
+ chips:[['You’re away that weekend','bad'],['Go anyway?','info']]})+
+'<div class="h2">Still worth asking</div>'+
+'<div class="card"><div style="font-size:14.5px;font-weight:600;margin-bottom:5px">Still care about Toad the Wet Sprocket?</div>'+
+'<div style="font-size:13px;color:#6d7484;margin-bottom:11px">Three CDs on your shelf, nothing played in years — and there’s a show in their world next month, so your answer would change what I show you.</div>'+
+'<div class="chips"><span class="chip ok">Still love them</span><span class="chip info">Fond, wouldn’t go</span><span class="chip bad">Over it</span></div></div>'+
+'<div class="h2">What it’s learned about you</div>'+
+'<div class="learn">'+
+'<div class="lrow"><div class="t">How adventurous</div><div class="bar"><i style="left:0;width:78%"></i></div>'+
+'<div class="barlab"><span>Bands I know</span><span>Total strangers</span></div></div>'+
+'<div class="lrow"><div class="t">Old vs. new</div><div class="bar"><i style="left:0;width:34%"></i></div>'+
+'<div class="barlab"><span>Heritage acts</span><span>Current bands</span></div></div>'+
+'<div class="lrow" style="margin-bottom:0"><div class="t">Recently changed</div>'+
+'<div style="font-size:13px;color:#a8b0bf;margin-top:4px">You’ve turned down four late weeknight shows since June, so I’ve eased off those. Ardmore Music Hall moved up after two good nights there.</div></div></div>'+
+'<div class="ban honest" style="margin-top:14px"><b>43 considered, 5 shown.</b> Skipped: 19 not your thing, 11 too far, 6 you’re busy, 2 at venues you don’t like.</div>';
+
+var screens={d1:d1,w3:w3,y2:y2};
+var ctxs={
+ d1:'Someone who just installed it. No accounts linked, nothing scanned. It has about ninety seconds to be useful.',
+ w3:'A few weeks in. It knows a little, admits it knows a little, and is still testing what you like.',
+ y2:'A year in. It has your shelf, your history and your venue preferences. This is what it’s for.'};
+
+function show(p){
+  document.getElementById('pad').innerHTML=screens[p];
+  var t=ctxs[p];
+  document.getElementById('ctxM').textContent=t;
+  document.getElementById('ctxD').textContent=t;
+  var s=document.getElementById('screen');
+  if(s&&s.scrollHeight>s.clientHeight) s.scrollTop=0;
+  var bs=document.getElementById('sw').getElementsByTagName('button');
+  for(var i=0;i<bs.length;i++) bs[i].className = (bs[i].getAttribute('data-p')===p?'on':'');
+}
+document.getElementById('sw').onclick=function(e){
+  var n=e.target; while(n&&n.tagName!=='BUTTON') n=n.parentNode;
+  if(n&&n.getAttribute('data-p')) show(n.getAttribute('data-p'));
+};
+
+var MSG=[
+ 'Got it — I’ll adjust your music taste. Venue, timing and price are untouched.',
+ 'Got it — that venue drops down the list. What I think of your music taste is completely unchanged.',
+ 'Got it — I’ll lean more current, less nostalgia. Your music taste is untouched.',
+ 'Got it — more bands you already know. Nothing else moved.',
+ 'Got it — fewer weeknights. Nothing else moved.',
+ 'Got it — I’ll keep an eye on price. Nothing else moved.'];
+function os(){document.getElementById('sheet').className='sheet open'}
+function cs(i){document.getElementById('sheet').className='sheet';alert(MSG[i])}
+document.getElementById('sheet').onclick=function(e){
+  if(e.target.id==='sheet') e.target.className='sheet';
+};
+function say(k){
+  alert(k===0 ? 'This would open the band in Spotify or Apple Music so you can hear them first.'
+              : 'This would take you straight to tickets.');
+}
+
+/* touch vs pointer wording */
+var touch = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
+document.getElementById('verb').textContent = touch ? 'Tap' : 'Click';
+
+/* ===================== FEEDBACK COLLECTION =====================
+   Responses go straight into a Google Sheet you own. See SETUP.md — takes
+   about five minutes. Paste the Apps Script web-app URL below:
+     var ENDPOINT = 'https://script.google.com/macros/s/AKfy…/exec';
+   Leave it empty and the form falls back to opening a pre-filled email,
+   so the file is still usable before you've set anything up.
+
+   Note: the POST deliberately uses Content-Type text/plain. That makes it a
+   "simple request" so the browser skips the CORS preflight, which Apps Script
+   does not answer. The script parses the JSON body itself.                  */
+var ENDPOINT = '';
+var TO_EMAIL = 'ajmackey@gmail.com';
+/* ============================================================== */
+
+var picks = {};
+var pickEls = document.getElementsByClassName('pick');
+for (var i = 0; i < pickEls.length; i++) {
+  (function (box) {
+    var key = box.getAttribute('data-k');
+    box.onclick = function (e) {
+      if (e.target.tagName !== 'SPAN') return;
+      var kids = box.getElementsByTagName('span');
+      for (var j = 0; j < kids.length; j++) kids[j].className = '';
+      e.target.className = 'sel';
+      picks[key] = e.target.textContent;
+    };
+  })(pickEls[i]);
+}
+
+/* plain ASCII keys — they must match the Apps Script exactly */
+function collect() {
+  var f = document.getElementById('fb');
+  return {
+    open:    picks.open    || '(skipped)',
+    unknown: picks.unknown || '(skipped)',
+    why:     picks.why     || '(skipped)',
+    worked:  f.worked.value  || '',
+    missing: f.missing.value || '',
+    name:    f.who.value     || '(anonymous)',
+    screen:  (window.innerWidth < 900 ? 'phone' : 'desktop') + ' ' + window.innerWidth + 'px'
+  };
+}
+
+var LABEL = {
+  open: 'Would you open this', unknown: 'Would you see an unknown band',
+  why: 'Do the explanations land', worked: 'What worked / what did not',
+  missing: 'What is missing', name: 'Name', screen: 'Screen'
+};
+function asText(d) {
+  var s = '';
+  for (var k in d) if (d.hasOwnProperty(k)) s += LABEL[k] + ':\n' + (d[k] || '(blank)') + '\n\n';
+  return s;
+}
+
+function done() {
+  document.getElementById('fb').style.display = 'none';
+  document.getElementById('thanks').style.display = 'block';
+}
+
+document.getElementById('fb').onsubmit = function (e) {
+  e.preventDefault();
+  var data = collect();
+  var note = document.getElementById('formnote');
+  var btn = document.getElementById('submit');
+
+  if (!ENDPOINT) {                       // fallback: pre-filled email
+    window.location.href = 'mailto:' + TO_EMAIL +
+      '?subject=' + encodeURIComponent('Hearsay — my thoughts') +
+      '&body=' + encodeURIComponent(asText(data));
+    note.className = 'formnote';
+    note.textContent = 'Opening your email app — press send to finish.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  note.className = 'formnote';
+  note.textContent = '';
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', ENDPOINT, true);
+  /* text/plain keeps this a "simple request" — no CORS preflight */
+  xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status >= 200 && xhr.status < 300) { done(); return; }
+    btn.disabled = false;
+    btn.textContent = 'Send feedback →';
+    note.className = 'formnote err';
+    note.textContent = 'That didn’t send. Tap again, or just email ' + TO_EMAIL + '.';
+  };
+  xhr.send(JSON.stringify(data));
+};
+
+show('d1');
+</script>
+</body>
+</html>
