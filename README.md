@@ -65,13 +65,41 @@ The skipped-show tally derives from `vol` and `n`, so the arithmetic can't drift
 > here was chosen for confidence, but none was verified as open on the day this
 > was built.
 
+## What the "a year later" screen is arguing
+
+The three stages were always about *time*. The year-two screen now also carries the
+ideas from revision 6 of the specs — each one chosen because it's a **perceived user
+benefit**, not because it's interesting to build.
+
+| On screen | Spec | The point |
+|---|---|---|
+| **"They opened for The Wilder Sons at AthFest in July"** | `PROD-48e` shared-stage recommendations | The most legible reason the product can give. It's **checkable**, it's **self-explaining** — you can judge the leap yourself instead of trusting us — and it's interesting whether or not you go. Compare "listeners who like X also like Y," which is true but opaque. |
+| **"Heads up — well-known act, small room"** | `PROD-51`, `PROD-51a` | A sell-out warning that **doesn't lie**. We have no ticket-inventory data, so it says "shows like this usually go — that's a pattern, not a countdown." Never "selling fast," never "12 left." Fabricated scarcity is the thing this app is an alternative to. |
+| **"$45 — above the ~$40 you set"** | `PROD-27` | The budget is a **soft ceiling**, not a filter. An exceptional match may exceed it, and must say so. An unexplained over-budget pick is a bug. |
+| **"Price not listed"** (week 3) | `PROD-27a` | Unknown price is a **first-class state**. WXPN publishes no prices at all, so in Philadelphia this is the honest answer — never $0, never silently passing or failing the budget check. |
+| **"It's a Tuesday, and they're on last"** | `PROD-76`–`78` | The gap this found in the old model: a 9pm Tuesday show is **not a calendar conflict** — the calendar at 9pm Tuesday is empty. It's a problem at 8am Wednesday. And it **warns, never filters** — you decide. |
+| **"Do you remember who opened?"** (week 3) | `PROD-68`, `KG-60` | Community curation, **only asked of people who marked attendance**. Local openers are the hardest edge to source and you were in the room. "Don't remember" is as easy to tap as an answer, on purpose. |
+| **Ticket-budget bar** in "what it's learned" | `PROD-79` | Tolerance is **learned, not configured** — "stretched twice this year; both times you went." |
+
+Two things deliberately **not** in the demo, because they're invisible to a user:
+the collaborative-filtering staging (`RECSYS-SPEC` §7) and the knowledge-graph
+provenance model (`KG-SPEC` §3). They shape what the app can honestly say; they are
+not features.
+
+> **Festival names are real; the bands and the co-bills are invented.** Same caveat as
+> the venues — verify before showing a city to someone who lives there.
+
 ### What the feedback form now captures
 
-Two additions: which market they were viewing, and a free-text "is your city on
-the list — if not, which one?". Both ride along inside the existing `screen`
-field, so they arrive **without any change to the Apps Script**. They are also
-sent as their own `market` and `city` keys — add two columns and two fields to
-the script when you want them broken out into their own columns.
+Three additions: which market they were viewing, a free-text "is your city on the
+list — if not, which one?", and a **multi-select on which revision-6 features
+actually matter** (`feats`). Market and city ride inside the existing `screen`
+field so they arrive **without any change to the Apps Script**; all three are also
+sent as their own `market`, `city` and `feats` keys — add columns and fields to the
+script when you want them broken out properly.
 
-That second question is the most useful thing on the form right now. Demand for
-a market you haven't considered is the cheapest signal you can buy.
+The two highest-value questions on the form right now: **demand for a market you
+haven't considered** is the cheapest signal you can buy, and **which of the six
+features people actually pick** tells you what to build after M0 — several cost real
+work, and at least one (the sell-out heads-up) can never be backtested, so stated
+preference is the only evidence you will get.
