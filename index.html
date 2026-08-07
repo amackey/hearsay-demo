@@ -58,6 +58,19 @@
   .switch button b{display:block;font-size:13.5px;color:var(--ink);font-weight:650;margin-bottom:1px}
   .switch button.on{background:var(--accent);border-color:var(--accent)}
   .switch button.on,.switch button.on b{color:#fff}
+
+  /* market picker */
+  .mkt{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .mkt label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);
+    font-weight:600;flex:0 0 auto}
+  .mkt select{flex:1;min-width:0;background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    border-radius:11px;padding:10px 34px 10px 12px;font:inherit;font-size:14px;font-weight:600;
+    cursor:pointer;-webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%236d7484' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 13px center;background-size:11px}
+  .mkt select:focus{outline:0;border-color:var(--accent)}
+  .mkt select optgroup{color:var(--ink3);font-style:normal;font-size:12px}
+  .mkt select option{color:var(--ink);background:var(--panel);font-weight:400}
   .ctx{font-size:12.5px;color:var(--ink3);padding:9px 2px 0;min-height:36px}
   .ctx-m{padding:0 18px 4px}
   @media(min-width:900px){.ctx-m{display:none}}
@@ -194,6 +207,37 @@
 
  <div class="col-l">
   <div class="a-sw">
+    <div class="mkt">
+      <label for="mk">Your city</label>
+      <select id="mk">
+        <optgroup label="Metros">
+          <option value="phl">Philadelphia, PA</option>
+          <option value="msp">Minneapolis–St. Paul, MN</option>
+          <option value="nol">New Orleans, LA</option>
+          <option value="nsh">Nashville, TN</option>
+          <option value="atx">Austin, TX</option>
+          <option value="sea">Seattle, WA</option>
+          <option value="pdx">Portland, OR</option>
+          <option value="den">Denver, CO</option>
+          <option value="chi">Chicago, IL</option>
+          <option value="bos">Boston, MA</option>
+          <option value="pit">Pittsburgh, PA</option>
+        </optgroup>
+        <optgroup label="College towns &amp; small scenes">
+          <option value="ahn">Athens, GA</option>
+          <option value="cho">Charlottesville, VA</option>
+          <option value="avl">Asheville, NC</option>
+          <option value="chp">Chapel Hill &amp; Carrboro, NC</option>
+          <option value="mad">Madison, WI</option>
+          <option value="btv">Burlington, VT</option>
+          <option value="knx">Knoxville, TN</option>
+          <option value="iow">Iowa City, IA</option>
+          <option value="ric">Richmond, VA</option>
+          <option value="tus">Tucson, AZ</option>
+          <option value="slc">Salt Lake City, UT</option>
+        </optgroup>
+      </select>
+    </div>
     <div class="switch" id="sw">
       <button data-p="d1" class="on"><b>Day one</b>just installed</button>
       <button data-p="w3"><b>A few weeks in</b>learning you</button>
@@ -220,7 +264,8 @@
     <p>It knows what music you like, which venues you enjoy, and whether you're already busy
        that night. Then it sends <b>five shows a week. Not five hundred.</b></p>
     <div class="callout">None of this is real yet — it's a clickable sketch. The venues are real
-       Philadelphia rooms; the bands are invented. <span id="verb">Tap</span> things, most of it responds.</div>
+       <b id="mktname">Philadelphia</b> rooms; the bands are invented. <span id="verb">Tap</span> things,
+       most of it responds. <b>Pick your own city up there</b> — the rooms change with it.</div>
     <div class="ctx ctx-d" id="ctxD"></div>
     <p class="deskonly" style="font-size:13px;color:var(--ink3);margin-top:18px">
        You're on a big screen, so it's shown inside a phone. Open this same file on your
@@ -265,6 +310,11 @@
       </div>
 
       <div class="q">
+        <b>Is your city on the list? <span style="font-weight:400;color:var(--ink3)">(if not, which one?)</span></b>
+        <input name="city" type="text" placeholder="e.g. Portland, ME — where would you actually use this?">
+      </div>
+
+      <div class="q">
         <b>Who is this? <span style="font-weight:400;color:var(--ink3)">(optional)</span></b>
         <input name="who" type="text" placeholder="Name, so Aaron can follow up">
       </div>
@@ -280,7 +330,7 @@
       </div>
     </div>
 
-    <p class="foot">Invented bands, real venues. Nothing is booked, nothing is charged,<br>no account needed.</p>
+    <p class="foot">Invented bands, real venues, 22 cities. Nothing is booked,<br>nothing is charged, no account needed.</p>
   </div>
  </div>
 
@@ -298,6 +348,138 @@
 </div></div>
 
 <script>
+/* ===================== MARKETS =====================
+   Venues are real rooms; bands are invented. Each market names the editorial
+   calendar its listings would actually come from, and declares that source's
+   genre lean — because pretending to even coverage everywhere would be a lie.
+
+   sm/sm2 = the small room (with / without neighbourhood) · cap = its capacity
+   v1..v3 = week-three venues  ·  y1..y5 = year-two venues
+   vol    = shows in the area that month  ·  n = how many the app shows
+
+   Venue lists need a freshness check before this goes in front of anyone from
+   that city — small rooms close. See README.                              */
+function M(o){return o}
+var MK={
+ phl:M({city:'Philadelphia',rad:25,src:'WXPN',lean:'indie, folk and rock',thin:'metal or hip-hop',
+   sm:'Johnny Brenda’s · Fishtown',sm2:'Johnny Brenda’s',cap:250,
+   v1:'Ardmore Music Hall',v2:'PhilaMOCA',v3:'World Cafe Live',
+   y1:'Union Transfer',y2v:'Underground Arts',y3:'Keswick Theatre',y4:'Johnny Brenda’s',y5:'Mann Center',
+   loved:'Ardmore Music Hall',vol:43,n:5}),
+ msp:M({city:'Minneapolis–St. Paul',rad:25,src:'The Current',lean:'indie, alt-rock and Minnesota-first booking',thin:'jazz or classical',
+   sm:'7th St Entry · Downtown',sm2:'7th St Entry',cap:250,
+   v1:'Turf Club · St. Paul',v2:'Icehouse',v3:'Cedar Cultural Center',
+   y1:'First Avenue',y2v:'The Hook & Ladder',y3:'Palace Theatre',y4:'7th St Entry',y5:'Surly Festival Field',
+   loved:'Turf Club',vol:51,n:5}),
+ nol:M({city:'New Orleans',rad:20,src:'WWOZ’s Livewire calendar',lean:'jazz, funk, brass and blues',thin:'indie rock or metal',
+   sm:'Spotted Cat · Frenchmen St',sm2:'the Spotted Cat',cap:100,
+   v1:'d.b.a.',v2:'Snug Harbor',v3:'Vaughan’s Lounge',
+   y1:'Tipitina’s',y2v:'Preservation Hall',y3:'Blue Nile',y4:'d.b.a.',y5:'Orpheum Theater',
+   loved:'d.b.a.',vol:96,n:5}),
+ nsh:M({city:'Nashville',rad:25,src:'the Nashville Scene',lean:'country, Americana and singer-songwriter',thin:'electronic or metal',
+   sm:'The 5 Spot · East Nashville',sm2:'The 5 Spot',cap:200,
+   v1:'The Basement East',v2:'Third Man Records Blue Room',v3:'The Station Inn',
+   y1:'Exit/In',y2v:'The Basement',y3:'Ryman Auditorium',y4:'The 5 Spot',y5:'Ascend Amphitheater',
+   loved:'The Basement East',vol:58,n:5}),
+ atx:M({city:'Austin',rad:25,src:'KUTX',lean:'Americana, indie and psych',thin:'classical',
+   sm:'Hole in the Wall · The Drag',sm2:'Hole in the Wall',cap:150,
+   v1:'Continental Club',v2:'Antone’s',v3:'Sagebrush',
+   y1:'Mohawk',y2v:'Hotel Vegas',y3:'Stubb’s',y4:'Continental Club',y5:'ACL Live at the Moody Theater',
+   loved:'Mohawk',vol:74,n:5}),
+ sea:M({city:'Seattle',rad:25,src:'KEXP and EverOut',lean:'indie, electronic and hip-hop',thin:'country or classical',
+   sm:'Barboza · Capitol Hill',sm2:'Barboza',cap:150,
+   v1:'Tractor Tavern',v2:'Sunset Tavern',v3:'Clock-Out Lounge',
+   y1:'Neumos',y2v:'The Crocodile',y3:'The Showbox',y4:'Tractor Tavern',y5:'Paramount Theatre',
+   loved:'Tractor Tavern',vol:49,n:5}),
+ pdx:M({city:'Portland',rad:25,src:'EverOut Portland',lean:'indie, experimental and electronic',thin:'country',
+   sm:'Turn! Turn! Turn! · NE Sandy',sm2:'Turn! Turn! Turn!',cap:100,
+   v1:'Mississippi Studios',v2:'Holocene',v3:'The Old Church',
+   y1:'Doug Fir Lounge',y2v:'Revolution Hall',y3:'Crystal Ballroom',y4:'Mississippi Studios',y5:'Roseland Theater',
+   loved:'Mississippi Studios',vol:46,n:5}),
+ den:M({city:'Denver',rad:25,src:'Indie 102.3',lean:'indie, jam and Americana',thin:'jazz or classical',
+   sm:'hi-dive · South Broadway',sm2:'the hi-dive',cap:250,
+   v1:'Larimer Lounge',v2:'Globe Hall',v3:'Lost Lake',
+   y1:'Bluebird Theater',y2v:'Ogden Theatre',y3:'Gothic Theatre',y4:'hi-dive',y5:'Mission Ballroom',
+   loved:'Larimer Lounge',vol:55,n:5}),
+ chi:M({city:'Chicago',rad:25,src:'the Chicago Reader',lean:'indie, jazz, house and punk',thin:'arena pop — which isn’t the point here anyway',
+   sm:'The Hideout · Near West',sm2:'The Hideout',cap:150,
+   v1:'Empty Bottle',v2:'Schubas Tavern',v3:'Constellation',
+   y1:'Lincoln Hall',y2v:'Thalia Hall',y3:'Metro',y4:'Empty Bottle',y5:'Salt Shed',
+   loved:'Empty Bottle',vol:88,n:5}),
+ bos:M({city:'Boston',rad:25,src:'Boston Hassle and WERS',lean:'DIY, punk and experimental',thin:'country or big-room jazz',
+   sm:'Lilypad · Inman Square',sm2:'the Lilypad',cap:80,
+   v1:'The Middle East Upstairs',v2:'Sonia',v3:'Crystal Ballroom · Somerville',
+   y1:'The Sinclair',y2v:'Brighton Music Hall',y3:'Royale',y4:'The Middle East Upstairs',y5:'Roadrunner',
+   loved:'The Sinclair',vol:61,n:5}),
+ pit:M({city:'Pittsburgh',rad:25,src:'WYEP',lean:'indie, Americana and blues',thin:'metal or electronic',
+   sm:'Club Café · South Side',sm2:'Club Café',cap:150,
+   v1:'Thunderbird Café & Music Hall',v2:'Government Center',v3:'City Winery',
+   y1:'Mr. Smalls Theatre',y2v:'Roxian Theatre',y3:'Carnegie Lecture Hall',y4:'Club Café',y5:'Stage AE',
+   loved:'Thunderbird Café & Music Hall',vol:31,n:5}),
+
+ ahn:M({city:'Athens',rad:30,src:'Flagpole',lean:'indie rock, punk and Americana',thin:'jazz or classical',
+   sm:'Flicker Theatre & Bar · Downtown',sm2:'Flicker',cap:100,
+   v1:'Nowhere Bar',v2:'Caledonia Lounge',v3:'Hendershot’s',
+   y1:'40 Watt Club',y2v:'Georgia Theatre',y3:'Ciné',y4:'Flicker Theatre & Bar',y5:'',
+   loved:'the 40 Watt Club',vol:19,n:4}),
+ cho:M({city:'Charlottesville',rad:25,src:'WTJU’s calendar',lean:'roots, folk, jazz and world',thin:'hip-hop or electronic',
+   sm:'The Front Porch · Downtown',sm2:'The Front Porch',cap:80,
+   v1:'The Southern Café & Music Hall',v2:'The Stage at WTJU',v3:'Champion Brewing',
+   y1:'The Jefferson Theater',y2v:'The Southern Café & Music Hall',y3:'Old Cabell Hall',y4:'The Front Porch',y5:'',
+   loved:'The Southern Café & Music Hall',vol:16,n:4}),
+ avl:M({city:'Asheville',rad:25,src:'Mountain Xpress’ Clubland',lean:'Appalachian roots, bluegrass and jam',thin:'hip-hop or electronic',
+   sm:'Static Age Records · Downtown',sm2:'Static Age',cap:100,
+   v1:'The Grey Eagle',v2:'Eulogy',v3:'Fleetwood’s',
+   y1:'The Orange Peel',y2v:'The Grey Eagle',y3:'Rabbit Rabbit',y4:'Static Age Records',y5:'',
+   loved:'The Grey Eagle',vol:27,n:4}),
+ chp:M({city:'Chapel Hill & Carrboro',rad:25,src:'INDY Week',lean:'indie rock, punk and hip-hop',thin:'classical',
+   sm:'Local 506 · Franklin St',sm2:'Local 506',cap:250,
+   v1:'Cat’s Cradle Back Room',v2:'The Pinhook · Durham',v3:'Nightlight',
+   y1:'Cat’s Cradle',y2v:'Motorco Music Hall',y3:'Kings · Raleigh',y4:'Local 506',y5:'',
+   loved:'Cat’s Cradle',vol:24,n:4}),
+ mad:M({city:'Madison',rad:25,src:'Isthmus',lean:'indie, roots and jam',thin:'hip-hop or metal',
+   sm:'Communication · Willy St',sm2:'Communication',cap:150,
+   v1:'High Noon Saloon',v2:'Crystal Corner Bar',v3:'Der Rathskeller',
+   y1:'High Noon Saloon',y2v:'Majestic Theatre',y3:'Barrymore Theatre',y4:'Communication',y5:'',
+   loved:'High Noon Saloon',vol:22,n:4}),
+ btv:M({city:'Burlington',rad:25,src:'Seven Days',lean:'jam, folk and indie',thin:'hip-hop or metal',
+   sm:'Radio Bean · Old North End',sm2:'Radio Bean',cap:80,
+   v1:'Nectar’s',v2:'Higher Ground Showcase Lounge',v3:'Light Club Lamp Shop',
+   y1:'Higher Ground Ballroom',y2v:'Nectar’s',y3:'Flynn Theater',y4:'Radio Bean',y5:'',
+   loved:'Nectar’s',vol:18,n:4}),
+ knx:M({city:'Knoxville',rad:30,src:'WDVX and WUTK',lean:'old-time, bluegrass and Americana',thin:'electronic or hip-hop',
+   sm:'The Pilot Light · Old City',sm2:'The Pilot Light',cap:100,
+   v1:'Barley’s Taproom',v2:'Preservation Pub',v3:'the WDVX Blue Plate Special',
+   y1:'The Mill & Mine',y2v:'Bijou Theatre',y3:'Tennessee Theatre',y4:'The Pilot Light',y5:'',
+   loved:'Barley’s Taproom',vol:21,n:4}),
+ iow:M({city:'Iowa City',rad:30,src:'Little Village',lean:'indie, punk and folk',thin:'jazz or electronic',
+   sm:'Trumpet Blossom Café · Southside',sm2:'Trumpet Blossom',cap:100,
+   v1:'Gabe’s',v2:'Public Space One',v3:'Wildwood',
+   y1:'The Englert Theatre',y2v:'Gabe’s',y3:'Hancher Auditorium',y4:'Trumpet Blossom Café',y5:'',
+   loved:'Gabe’s',vol:14,n:4}),
+ ric:M({city:'Richmond',rad:25,src:'WRIR and RVA Mag',lean:'punk, metal and hip-hop',thin:'classical or country',
+   sm:'Gallery5 · Jackson Ward',sm2:'Gallery5',cap:150,
+   v1:'The Camel',v2:'Richmond Music Hall',v3:'Cobra Cabana',
+   y1:'The Broadberry',y2v:'The Camel',y3:'The National',y4:'Gallery5',y5:'',
+   loved:'The Camel',vol:29,n:4}),
+ tus:M({city:'Tucson',rad:30,src:'KXCI',lean:'desert rock, folk and Latin',thin:'metal',
+   sm:'Club Congress · Downtown',sm2:'Club Congress',cap:300,
+   v1:'191 Toole',v2:'The Century Room',v3:'Hotel Congress Plaza',
+   y1:'Rialto Theatre',y2v:'191 Toole',y3:'Fox Tucson Theatre',y4:'Club Congress',y5:'',
+   loved:'191 Toole',vol:23,n:4}),
+ slc:M({city:'Salt Lake City',rad:25,src:'Salt Lake City Weekly',lean:'indie, punk and all-ages',thin:'jazz',
+   sm:'Kilby Court · Granary District',sm2:'Kilby Court',cap:200,
+   v1:'Urban Lounge',v2:'The State Room',v3:'Aces High Saloon',
+   y1:'The Depot',y2v:'Urban Lounge',y3:'The Complex',y4:'Kilby Court',y5:'',
+   loved:'Urban Lounge',vol:26,n:4})
+};
+var cur='phl';
+
+/* skip breakdown, derived so the numbers always add up to vol */
+function skips(m){
+  var s=m.vol-m.n, a=Math.round(s*.5), b=Math.round(s*.29), c=Math.round(s*.16);
+  return [a,b,c,s-a-b-c];
+}
 var A=function(c){return 'background:linear-gradient(135deg,'+c+')'};
 function card(o){
   return '<div class="card '+(o.bridge?'bridge':'')+'">'+
@@ -315,9 +497,10 @@ function card(o){
     '<span class="lab">a thumbs down always asks why</span></div></div>';
 }
 
-var d1 =
+function d1(m){ return ''+  /* the ''+ must stay on this line: a bare `return` before a newline returns undefined */
 '<div class="appbar"><div class="brand">hear<span>say</span></div><div class="brandsub">Hear · Say · Go</div></div>'+
-'<div class="ban"><b>Philadelphia</b> · within 25 miles · next 3 months</div>'+
+'<div class="ban"><b>'+m.city+'</b> · within '+m.rad+' miles · next 3 months<br>'+
+'<span style="color:#6d7484;font-size:12px">listings from '+m.src+'</span></div>'+
 '<div class="h2">First, just tell it what you like</div>'+
 '<div class="msg a">No accounts to link, nothing to wait for. Name a few artists you love and I’ll take it from there.</div>'+
 '<div class="msg u">I like Bruno Mars</div>'+
@@ -333,50 +516,53 @@ var d1 =
 '<div class="src"><div class="ico">💿</div><div class="nm">Scan your CD shelf<div class="st">Point the camera along the spines</div></div><div class="go2">Scan</div></div>'+
 '<div class="src" style="border:0"><div class="ico">📅</div><div class="nm">Your calendar<div class="st">Never leaves your phone</div></div><div class="go2">Allow</div></div>'+
 '<div class="h2">Already, from 90 seconds of that</div>'+
-card({i:'TV',c:'#ffb03a,#ff5c39',who:'The Velour Underground',where:'Johnny Brenda’s · Fishtown',
+card({i:'TV',c:'#ffb03a,#ff5c39',who:'The Velour Underground',where:m.sm,
  meta:'Thu Aug 14 · evening · $18',
- why:'Retro-soul with a horn section — the <em>Bruno Mars</em> thread you pulled on, in a 250-person room.',
- chips:[['Brand new to you','new'],['Still learning your taste','warn']]});
+ why:'Retro-soul with a horn section — the <em>Bruno Mars</em> thread you pulled on, in a '+m.cap+'-person room.',
+ chips:[['Brand new to you','new'],['Still learning your taste','warn']]}); }
 
-var w3 =
+function w3(m){ return ''+
 '<div class="appbar"><div class="brand">hear<span>say</span></div><div class="brandsub">Week 3</div></div>'+
 '<div class="ban learn"><b>Still figuring you out.</b> Three shows this week rather than five, and I’m deliberately mixing it up while I learn.</div>'+
 '<div class="ban"><b>Your listening history is on its way</b> — requested Jul 3, usually about a month.</div>'+
 '<div class="h2">This week</div>'+
-card({i:'PR',c:'#5aa9ff,#3ddc97',who:'Pale Ridge',where:'Ardmore Music Hall',meta:'Fri Aug 8 · 8:00pm · $25',
+card({i:'PR',c:'#5aa9ff,#3ddc97',who:'Pale Ridge',where:m.v1,meta:'Fri Aug 8 · 8:00pm · $25',
  why:'The closest thing to a sure bet I have for you so far.',
  chips:[['You’re free','ok'],['New to you','new']]})+
-card({i:'KH',c:'#ff5f6d,#ffb03a',who:'Kestrel Hours',where:'PhilaMOCA',meta:'Sat Aug 16 · evening · $15',
+card({i:'KH',c:'#ff5f6d,#ffb03a',who:'Kestrel Hours',where:m.v2,meta:'Sat Aug 16 · evening · $15',
  why:'A stretch, honestly — quieter and stranger than anything you’ve liked yet. I’m testing an edge.',
  chips:[['You’re free','ok'],['A guess','info']]})+
-card({i:'BW',c:'#a8b0bf,#5aa9ff',who:'Brass & Wire',where:'World Cafe Live',meta:'Wed Aug 20 · 7:30pm · $22',
+card({i:'BW',c:'#a8b0bf,#5aa9ff',who:'Brass & Wire',where:m.v3,meta:'Wed Aug 20 · 7:30pm · $22',
  why:'Horn-forward soul, close to where you started.',
  chips:[['Clashes with “Dinner w/ M.”','warn'],['Go anyway?','info']]})+
 '<div class="h2">One quick thing</div>'+
-'<div class="card"><div style="font-size:14.5px;font-weight:600;margin-bottom:5px">How was Johnny Brenda’s?</div>'+
+'<div class="card"><div style="font-size:14.5px;font-weight:600;margin-bottom:5px">How was '+m.sm2+'?</div>'+
 '<div style="font-size:13px;color:#6d7484;margin-bottom:11px">You went on Jul 26. It keeps coming up, so knowing how you feel about the room would help a lot.</div>'+
 '<div class="chips"><span class="chip ok">Loved it</span><span class="chip">Fine</span><span class="chip bad">Not for me</span></div></div>'+
-'<div class="ban honest"><b>Worth saying:</b> my Philadelphia listings lean indie, folk and rock right now. If you’re into metal or hip-hop I’m thin there — I’d rather tell you than quietly show you less.</div>';
+'<div class="ban honest"><b>Worth saying:</b> my '+m.city+' listings come from '+m.src+', and they lean '+m.lean+
+'. If you’re into '+m.thin+' I’m thin there — I’d rather tell you than quietly show you less.</div>'; }
 
-var y2 =
+function y2(m){ var sk=skips(m); return ''+
 '<div class="appbar"><div class="brand">hear<span>say</span></div><div class="brandsub">Year 2</div></div>'+
-'<div class="ban"><b>Five shows.</b> 43 bands played the area this month. These are the ones worth your Tuesday.</div>'+
+'<div class="ban"><b>'+(m.n===5?'Five':'Four')+' shows.</b> '+m.vol+' bands played the area this month. '+
+(m.n===5 ? 'These are the ones worth your Tuesday.'
+         : 'It’s a small scene — four is what was actually worth your Tuesday, so four is what you get.')+'</div>'+
 '<div class="h2">This week</div>'+
-card({i:'FH',c:'#3ddc97,#5aa9ff',who:'Foxglove Hymnal',where:'Union Transfer',meta:'Thu Sep 11 · 8:00pm · $32',
+card({i:'FH',c:'#3ddc97,#5aa9ff',who:'Foxglove Hymnal',where:m.y1,meta:'Thu Sep 11 · 8:00pm · $32',
  why:'My most confident pick in months — lands right between <em>Wilco</em> and <em>Big Thief</em>, and you’ve rated both up again and again.',
  chips:[['You’re free','ok'],['New to you','new'],['A venue you love','ok']]})+
-card({bridge:1,i:'IX',c:'#ffb03a,#ff5f6d',who:'Signal & Static',where:'Underground Arts',meta:'Sat Sep 20 · evening · $20',
+card({bridge:1,i:'IX',c:'#ffb03a,#ff5f6d',who:'Signal & Static',where:m.y2v,meta:'Sat Sep 20 · evening · $20',
  why:'<em>From your CD shelf.</em> You’ve owned four <b>INXS</b> records since the 90s and never streamed them once. People who love INXS turn up a lot in this band’s audience — and they’re playing eleven blocks from you.',
  chips:[['From your shelf','info'],['You’re free','ok'],['Never heard of them','new']]})+
-card({i:'MR',c:'#ff5c39,#ffb03a',who:'Marisol Reyes Trio',where:'Keswick Theatre',meta:'Fri Sep 26 · 8:00pm · $45',
+card({i:'MR',c:'#ff5c39,#ffb03a',who:'Marisol Reyes Trio',where:m.y3,meta:'Fri Sep 26 · 8:00pm · $45',
  why:'You’ve rated this room up three times, and this is the closest thing to your jazz corner all season.',
  chips:[['All-day event that day','warn'],['Probably fine — go anyway?','info']]})+
-card({i:'HW',c:'#5aa9ff,#a8b0bf',who:'Hollow Ward',where:'Johnny Brenda’s',meta:'Tue Sep 30 · 8:30pm · $16',
+card({i:'HW',c:'#5aa9ff,#a8b0bf',who:'Hollow Ward',where:m.y4,meta:'Tue Sep 30 · 8:30pm · $16',
  why:'Small room, third on the bill, almost nobody has heard of them. Exactly the kind of thing you keep saying yes to.',
  chips:[['You’re free','ok'],['Opening act','new']]})+
-card({i:'TC',c:'#ff5f6d,#5aa9ff',who:'The Cormorants',where:'Mann Center',meta:'Sun Oct 5 · 7:00pm · $68',
+(m.n>4 ? card({i:'TC',c:'#ff5f6d,#5aa9ff',who:'The Cormorants',where:m.y5,meta:'Sun Oct 5 · 7:00pm · $68',
  why:'Bigger and pricier than you usually go for. Including it because you said yes to exactly one of these last year and loved it.',
- chips:[['You’re away that weekend','bad'],['Go anyway?','info']]})+
+ chips:[['You’re away that weekend','bad'],['Go anyway?','info']]}) : '')+
 '<div class="h2">Still worth asking</div>'+
 '<div class="card"><div style="font-size:14.5px;font-weight:600;margin-bottom:5px">Still care about Toad the Wet Sprocket?</div>'+
 '<div style="font-size:13px;color:#6d7484;margin-bottom:11px">Three CDs on your shelf, nothing played in years — and there’s a show in their world next month, so your answer would change what I show you.</div>'+
@@ -388,8 +574,9 @@ card({i:'TC',c:'#ff5f6d,#5aa9ff',who:'The Cormorants',where:'Mann Center',meta:'
 '<div class="lrow"><div class="t">Old vs. new</div><div class="bar"><i style="left:0;width:34%"></i></div>'+
 '<div class="barlab"><span>Heritage acts</span><span>Current bands</span></div></div>'+
 '<div class="lrow" style="margin-bottom:0"><div class="t">Recently changed</div>'+
-'<div style="font-size:13px;color:#a8b0bf;margin-top:4px">You’ve turned down four late weeknight shows since June, so I’ve eased off those. Ardmore Music Hall moved up after two good nights there.</div></div></div>'+
-'<div class="ban honest" style="margin-top:14px"><b>43 considered, 5 shown.</b> Skipped: 19 not your thing, 11 too far, 6 you’re busy, 2 at venues you don’t like.</div>';
+'<div style="font-size:13px;color:#a8b0bf;margin-top:4px">You’ve turned down four late weeknight shows since June, so I’ve eased off those. '+m.loved+' moved up after two good nights there.</div></div></div>'+
+'<div class="ban honest" style="margin-top:14px"><b>'+m.vol+' considered, '+m.n+' shown.</b> Skipped: '+
+sk[0]+' not your thing, '+sk[1]+' too far, '+sk[2]+' you’re busy, '+sk[3]+' at venues you don’t like.</div>'; }
 
 var screens={d1:d1,w3:w3,y2:y2};
 var ctxs={
@@ -397,19 +584,26 @@ var ctxs={
  w3:'A few weeks in. It knows a little, admits it knows a little, and is still testing what you like.',
  y2:'A year in. It has your shelf, your history and your venue preferences. This is what it’s for.'};
 
+var stage='d1';
 function show(p){
-  document.getElementById('pad').innerHTML=screens[p];
-  var t=ctxs[p];
+  stage=p||stage;
+  var m=MK[cur];
+  document.getElementById('pad').innerHTML=screens[stage](m);
+  var t=ctxs[stage];
   document.getElementById('ctxM').textContent=t;
   document.getElementById('ctxD').textContent=t;
+  document.getElementById('mktname').textContent=m.city;
   var s=document.getElementById('screen');
   if(s&&s.scrollHeight>s.clientHeight) s.scrollTop=0;
   var bs=document.getElementById('sw').getElementsByTagName('button');
-  for(var i=0;i<bs.length;i++) bs[i].className = (bs[i].getAttribute('data-p')===p?'on':'');
+  for(var i=0;i<bs.length;i++) bs[i].className = (bs[i].getAttribute('data-p')===stage?'on':'');
 }
 document.getElementById('sw').onclick=function(e){
   var n=e.target; while(n&&n.tagName!=='BUTTON') n=n.parentNode;
   if(n&&n.getAttribute('data-p')) show(n.getAttribute('data-p'));
+};
+document.getElementById('mk').onchange=function(){
+  if(MK[this.value]){ cur=this.value; show(); }
 };
 
 var MSG=[
@@ -462,24 +656,38 @@ for (var i = 0; i < pickEls.length; i++) {
   })(pickEls[i]);
 }
 
-/* plain ASCII keys — they must match the Apps Script exactly */
+/* plain ASCII keys — they must match the Apps Script exactly.
+   Which market they were looking at, and which one they actually want, ride
+   along inside `screen` so they arrive without touching the Apps Script.
+   `market` and `city` are also sent as their own keys: add two columns and two
+   fields to the script when you want them broken out properly. */
 function collect() {
   var f = document.getElementById('fb');
+  /* explicit lookup rather than f.<name> — same result in a browser, but this
+     form is also exercised by a headless test harness that lacks named access */
+  function val(n){ var el = f.querySelector('[name="' + n + '"]'); return el ? el.value : ''; }
+  var viewing = MK[cur].city;
+  var wants   = val('city');
   return {
     open:    picks.open    || '(skipped)',
     unknown: picks.unknown || '(skipped)',
     why:     picks.why     || '(skipped)',
-    worked:  f.worked.value  || '',
-    missing: f.missing.value || '',
-    name:    f.who.value     || '(anonymous)',
+    worked:  val('worked'),
+    missing: val('missing'),
+    name:    val('who') || '(anonymous)',
+    market:  viewing,
+    city:    wants || '(none given)',
     screen:  (window.innerWidth < 900 ? 'phone' : 'desktop') + ' ' + window.innerWidth + 'px'
+             + ' · viewing: ' + viewing
+             + (wants ? ' · wants: ' + wants : '')
   };
 }
 
 var LABEL = {
   open: 'Would you open this', unknown: 'Would you see an unknown band',
   why: 'Do the explanations land', worked: 'What worked / what did not',
-  missing: 'What is missing', name: 'Name', screen: 'Screen'
+  missing: 'What is missing', name: 'Name',
+  market: 'Market they viewed', city: 'Market they want', screen: 'Screen'
 };
 function asText(d) {
   var s = '';
